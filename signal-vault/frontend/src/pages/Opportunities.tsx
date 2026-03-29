@@ -15,7 +15,7 @@ const NICHE_OPTIONS = [
 ]
 
 export default function Opportunities() {
-  const { data: opportunities, loading } = useApiGet<OpportunityData[]>('/opportunities')
+  const { data: opportunities, loading, error } = useApiGet<OpportunityData[]>('/opportunities')
   const [nicheFilter, setNicheFilter] = useState('all')
   const [minScore, setMinScore] = useState(0)
 
@@ -35,6 +35,10 @@ export default function Opportunities() {
         </div>
         <span className="font-mono text-sm text-text-muted">{filtered.length} results</span>
       </div>
+
+      {error && (
+        <div className="mb-4 glass-card p-4 border border-rose/30 text-rose text-sm">Failed to load opportunities: {error}</div>
+      )}
 
       {/* Filters */}
       <div className="flex gap-3 mb-6">

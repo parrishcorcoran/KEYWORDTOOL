@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { NicheSummary, OpportunityData } from '../types'
@@ -7,17 +8,28 @@ import TrendArrow from '../components/TrendArrow'
 import OpportunityCard from '../components/OpportunityCard'
 
 export default function Dashboard() {
-  const { data: niches, loading: nichesLoading, refetch: refetchNiches } = useApiGet<NicheSummary[]>('/niches')
-  const { data: opportunities, loading: oppsLoading, refetch: refetchOpps } = useApiGet<OpportunityData[]>('/opportunities')
+  const { data: niches, loading: nichesLoading, error: nichesError, refetch: refetchNiches } = useApiGet<NicheSummary[]>('/niches')
+  const { data: opportunities, loading: oppsLoading, error: oppsError, refetch: refetchOpps } = useApiGet<OpportunityData[]>('/opportunities')
+  const [scanError, setScanError] = useState<string | null>(null)
 
   const handleScan = async (nicheId: string) => {
-    await apiFetch(`/scan/${nicheId}`, { method: 'POST' })
-    setTimeout(() => { refetchNiches(); refetchOpps() }, 2000)
+    try {
+      setScanError(null)
+      await apiFetch(`/scan/${nicheId}`, { method: 'POST' })
+      setTimeout(() => { refetchNiches(); refetchOpps() }, 2000)
+    } catch (e) {
+      setScanError(e instanceof Error ? e.message : 'Scan failed')
+    }
   }
 
   const handleScanAll = async () => {
-    await apiFetch('/scan/all', { method: 'POST' })
-    setTimeout(() => { refetchNiches(); refetchOpps() }, 5000)
+    try {
+      setScanError(null)
+      await apiFetch('/scan/all', { method: 'POST' })
+      setTimeout(() => { refetchNiches(); refetchOpps() }, 5000)
+    } catch (e) {
+      setScanError(e instanceof Error ? e.message : 'Scan failed')
+    }
   }
 
   return (
@@ -35,6 +47,15 @@ export default function Dashboard() {
           Scan All Niches
         </button>
       </div>
+
+      {/* Error displays */}
+      {(nichesError || oppsError || scanError) && (
+        <div className="mb-4 glass-card p-4 border border-rose/30 text-rose text-sm">
+          {nichesError && <p>Failed to load niches: {nichesError}</p>}
+          {oppsError && <p>Failed to load opportunities: {oppsError}</p>}
+          {scanError && <p>Scan error: {scanError}</p>}
+        </div>
+      )}
 
       {/* Niche Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mb-10">

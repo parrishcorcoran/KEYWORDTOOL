@@ -27,16 +27,22 @@ const CHART_COLORS = ['#d4a843', '#7c6cf0', '#34d399', '#f59e0b', '#f43f5e', '#8
 
 export default function NicheDetail() {
   const { id } = useParams<{ id: string }>()
-  const { data: niche, loading, refetch } = useApiGet<NicheDetailType>(`/niche/${id}`)
+  const { data: niche, loading, error, refetch } = useApiGet<NicheDetailType>(`/niche/${id}`)
   const [activeTab, setActiveTab] = useState<TabName>('Demand')
   const [sortKey, setSortKey] = useState<keyof KeywordData>('volume')
   const [sortAsc, setSortAsc] = useState(false)
   const [intentFilter, setIntentFilter] = useState<string>('all')
   const [trendFilter, setTrendFilter] = useState<string>('all')
+  const [scanError, setScanError] = useState<string | null>(null)
 
   const handleScan = async () => {
-    await apiFetch(`/scan/${id}`, { method: 'POST' })
-    setTimeout(refetch, 3000)
+    try {
+      setScanError(null)
+      await apiFetch(`/scan/${id}`, { method: 'POST' })
+      setTimeout(refetch, 3000)
+    } catch (e) {
+      setScanError(e instanceof Error ? e.message : 'Scan failed')
+    }
   }
 
   const handleSort = (key: keyof KeywordData) => {
@@ -58,6 +64,7 @@ export default function NicheDetail() {
   }, [niche, sortKey, sortAsc, intentFilter, trendFilter])
 
   if (loading) return <div className="space-y-4"><SkeletonTable rows={8} /></div>
+  if (error) return <div className="glass-card p-6 border border-rose/30 text-rose text-sm">Failed to load niche: {error}</div>
   if (!niche) return <div className="text-text-muted">Niche not found</div>
 
   // Product aggregations
@@ -102,6 +109,10 @@ export default function NicheDetail() {
           </button>
         </div>
       </div>
+
+      {scanError && (
+        <div className="mb-4 glass-card p-4 border border-rose/30 text-rose text-sm">Scan error: {scanError}</div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-border-subtle overflow-x-auto">

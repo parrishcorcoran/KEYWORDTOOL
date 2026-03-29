@@ -5,6 +5,7 @@ import base64
 import json
 import re
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 from bs4 import BeautifulSoup
@@ -122,7 +123,7 @@ async def dataforseo_serp(keyword: str, client: httpx.AsyncClient) -> dict:
 
 async def google_autocomplete(keyword: str, client: httpx.AsyncClient) -> list[str]:
     """Get Google autocomplete suggestions for a keyword."""
-    url = f"https://suggestqueries.google.com/complete/search?client=firefox&q={keyword}"
+    url = f"https://suggestqueries.google.com/complete/search?client=firefox&q={quote(keyword)}"
     try:
         resp = await client.get(url, headers={"User-Agent": REALISTIC_UA}, timeout=10)
         data = resp.json()
@@ -135,7 +136,7 @@ async def google_autocomplete(keyword: str, client: httpx.AsyncClient) -> list[s
 
 async def scrape_gumroad(term: str, client: httpx.AsyncClient) -> list[dict]:
     """Scrape Gumroad discover page for products."""
-    url = f"https://gumroad.com/discover?query={term}"
+    url = f"https://gumroad.com/discover?query={quote(term)}"
     try:
         resp = await client.get(url, headers={"User-Agent": REALISTIC_UA}, timeout=15)
         soup = BeautifulSoup(resp.text, "lxml")
@@ -176,7 +177,7 @@ async def scrape_gumroad(term: str, client: httpx.AsyncClient) -> list[dict]:
 
 async def scrape_etsy(term: str, client: httpx.AsyncClient) -> list[dict]:
     """Scrape Etsy search results."""
-    url = f"https://www.etsy.com/search?q={term}"
+    url = f"https://www.etsy.com/search?q={quote(term)}"
     try:
         resp = await client.get(url, headers={"User-Agent": REALISTIC_UA}, timeout=15)
         soup = BeautifulSoup(resp.text, "lxml")
@@ -220,7 +221,7 @@ async def scrape_etsy(term: str, client: httpx.AsyncClient) -> list[dict]:
 
 async def search_appstore(term: str, client: httpx.AsyncClient) -> list[dict]:
     """Search iTunes/App Store for apps."""
-    url = f"https://itunes.apple.com/search?term={term}&entity=software&limit=25&country=us"
+    url = f"https://itunes.apple.com/search?term={quote(term)}&entity=software&limit=25&country=us"
     try:
         resp = await client.get(url, timeout=15)
         data = resp.json()
@@ -290,7 +291,7 @@ async def fetch_reddit_posts(subreddit: str, client: httpx.AsyncClient, sort: st
 
 async def search_reddit(subreddit: str, query: str, client: httpx.AsyncClient) -> list[dict]:
     """Search within a subreddit."""
-    url = f"https://www.reddit.com/r/{subreddit}/search.json?q={query}&restrict_sr=on&sort=relevance&t=year"
+    url = f"https://www.reddit.com/r/{subreddit}/search.json?q={quote(query)}&restrict_sr=on&sort=relevance&t=year"
     try:
         resp = await client.get(url, headers={"User-Agent": f"SignalVault/1.0 ({REALISTIC_UA})"}, timeout=15)
         data = resp.json()

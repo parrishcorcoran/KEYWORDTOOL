@@ -120,8 +120,16 @@ def _run_scan_background(niche_id: str):
     db = SessionLocal()
     try:
         asyncio.run(run_full_scan(niche_id, db))
-    except Exception:
-        pass
+    except Exception as e:
+        active_scans[niche_id] = "failed"
+        # Log to scan_logs table so the error is visible
+        try:
+            from models import ScanLog
+            log = ScanLog(niche_id=niche_id, scan_type="full", status="failed", error_message=str(e)[:500])
+            db.add(log)
+            db.commit()
+        except Exception:
+            pass
     finally:
         db.close()
 

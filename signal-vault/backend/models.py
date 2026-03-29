@@ -16,7 +16,7 @@ class Keyword(Base):
     trend_direction = Column(String, default="stable")  # growing, declining, stable, exploding
     growth_pct_yoy = Column(Float, default=0.0)
     seasonality = Column(String, default="")
-    trend_data = Column(JSON, default=list)  # monthly volume array
+    trend_data = Column(JSON, default=lambda: [])  # monthly volume array
     autocomplete_present = Column(Boolean, default=False)
     confidence = Column(String, default="low")
 
@@ -37,7 +37,7 @@ class Product(Base):
     seller = Column(String, default="")
     url = Column(String, default="")
     product_type = Column(String, default="")
-    ai_landscape = Column(JSON, default=dict)
+    ai_landscape = Column(JSON, default=lambda: {})
 
 
 class PainPoint(Base):
@@ -48,7 +48,7 @@ class PainPoint(Base):
     theme = Column(String, nullable=False)
     frequency = Column(Integer, default=1)
     intensity = Column(Integer, default=1)  # 1-5
-    example_quotes = Column(JSON, default=list)
+    example_quotes = Column(JSON, default=lambda: [])
     source = Column(String, default="")
 
 
@@ -74,7 +74,7 @@ class SerpResult(Base):
     niche_id = Column(String, index=True, nullable=False)
     keyword = Column(String, nullable=False)
     difficulty = Column(Integer, default=0)
-    results = Column(JSON, default=list)
+    results = Column(JSON, default=lambda: [])
     has_featured_snippet = Column(Boolean, default=False)
     has_ai_overview = Column(Boolean, default=False)
 
