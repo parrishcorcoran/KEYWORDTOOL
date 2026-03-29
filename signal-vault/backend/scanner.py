@@ -1,7 +1,6 @@
 """Full scan pipeline for Signal Vault — orchestrates all data collection and scoring."""
 
 import asyncio
-import json
 import time
 from datetime import datetime, timezone
 
@@ -47,8 +46,10 @@ async def run_full_scan(niche_id: str, db: Session):
             # ── Module 1: DEMAND ────────────────────────────────────
             keywords_data = await _scan_demand(niche, client)
 
-            # Save keywords
-            intent_map = classify_intents([k["keyword"] for k in keywords_data[:30]])
+            # Classify intents (rule-based, instant)
+            intent_map = classify_intents([k["keyword"] for k in keywords_data])
+
+            # Check autocomplete presence
             autocomplete_kws = set()
             for kw in niche["seed_keywords"][:10]:
                 suggestions = await google_autocomplete(kw, client)
@@ -80,12 +81,12 @@ async def run_full_scan(niche_id: str, db: Session):
                 db.add(db_prod)
             db.commit()
 
-            # Claude landscape analysis
+            # Product landscape analysis (rule-based aggregation)
             if products:
                 landscape = analyze_product_landscape(
                     [{"title": p["title"], "price": p["price"], "platform": p["platform"],
                       "estimated_revenue": p["estimated_revenue"], "product_type": p["product_type"]}
-                     for p in products[:30]],
+                     for p in products],
                     niche["name"]
                 )
                 if landscape:
@@ -110,9 +111,10 @@ async def run_full_scan(niche_id: str, db: Session):
                 db.add(db_post)
             db.commit()
 
-            # Claude pain analysis
+            # Pain point extraction (rule-based frequency counting)
+            pain_analysis = {}
             if pain_texts:
-                pain_analysis = analyze_pain_points(pain_texts[:50], niche["name"])
+                pain_analysis = analyze_pain_points(pain_texts, niche["name"])
                 for theme_data in pain_analysis.get("pain_themes", []):
                     db_pain = PainPoint(
                         niche_id=niche_id,
@@ -123,7 +125,6 @@ async def run_full_scan(niche_id: str, db: Session):
                         source="reddit+reviews",
                     )
                     db.add(db_pain)
-                # Also store product gaps as pain points
                 for gap in pain_analysis.get("product_gaps", []):
                     db_pain = PainPoint(
                         niche_id=niche_id,
@@ -131,7 +132,7 @@ async def run_full_scan(niche_id: str, db: Session):
                         frequency=1,
                         intensity=3,
                         example_quotes=[],
-                        source="ai_analysis",
+                        source="gap_detection",
                     )
                     db.add(db_pain)
                 db.commit()
@@ -155,7 +156,7 @@ async def run_full_scan(niche_id: str, db: Session):
             db.commit()
 
             # ── Module 5: SCORING ───────────────────────────────────
-            await _score_opportunities(niche_id, db, pain_analysis if pain_texts else {})
+            await _score_opportunities(niche_id, db)
 
         # Update scan log
         duration = time.time() - start_time
@@ -243,7 +244,7 @@ async def _scan_pain_points(niche: dict, client: httpx.AsyncClient) -> tuple[lis
     return all_posts, pain_texts
 
 
-async def _score_opportunities(niche_id: str, db: Session, pain_analysis: dict):
+async def _score_opportunities(niche_id: str, db: Session):
     """Module 5: Score top keywords as opportunities."""
     keywords = db.query(Keyword).filter(Keyword.niche_id == niche_id).order_by(Keyword.volume.desc()).limit(20).all()
     products = db.query(Product).filter(Product.niche_id == niche_id).all()
@@ -255,7 +256,7 @@ async def _score_opportunities(niche_id: str, db: Session, pain_analysis: dict):
     avg_price = sum(p.price for p in products) / len(products) if products else 0
     app_count = sum(1 for p in products if p.product_type == "app")
     avg_pain = sum(pp.intensity for pp in pain_points) / len(pain_points) if pain_points else 0
-    feature_requests = len([pp for pp in pain_points if pp.source == "ai_analysis"])
+    feature_requests = len([pp for pp in pain_points if pp.source == "gap_detection"])
 
     # SERP difficulty lookup
     serp_lookup = {s.keyword.lower(): s for s in serp_results}
@@ -280,8 +281,8 @@ async def _score_opportunities(niche_id: str, db: Session, pain_analysis: dict):
             trend_direction=kw.trend_direction,
         )
 
-        # Generate AI brief for high scorers
-        ai_brief = ""
+        # Generate data-driven brief for high scorers
+        brief = ""
         if scores["overall_score"] >= 40:
             brief_data = {
                 "volume": kw.volume,
@@ -294,7 +295,7 @@ async def _score_opportunities(niche_id: str, db: Session, pain_analysis: dict):
                 "gap_score": scores["gap_score"],
                 "pain_points": [pp.theme for pp in pain_points[:5]],
             }
-            ai_brief = generate_opportunity_brief(kw.keyword, brief_data)
+            brief = generate_opportunity_brief(kw.keyword, brief_data)
 
         opp = Opportunity(
             niche_id=niche_id,
@@ -306,7 +307,7 @@ async def _score_opportunities(niche_id: str, db: Session, pain_analysis: dict):
             feasibility_score=scores["feasibility_score"],
             timing_score=scores["timing_score"],
             confidence=scores["confidence"],
-            ai_brief=ai_brief,
+            ai_brief=brief,
             volume=kw.volume,
             growth=kw.growth_pct_yoy,
             avg_price=round(avg_price, 2),
