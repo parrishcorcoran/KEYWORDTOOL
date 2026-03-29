@@ -83,50 +83,61 @@ export default function NicheDetail() {
   }, {})
 
   const intentBadgeColor: Record<string, string> = {
-    transactional: 'bg-emerald/10 text-emerald',
-    commercial: 'bg-gold/10 text-gold',
-    informational: 'bg-violet/10 text-violet',
-    navigational: 'bg-text-muted/10 text-text-muted',
+    transactional: 'bg-emerald/[0.08] text-emerald border border-emerald/[0.12]',
+    commercial: 'bg-gold/[0.08] text-gold border border-gold/[0.12]',
+    informational: 'bg-violet/[0.08] text-violet border border-violet/[0.12]',
+    navigational: 'bg-white/[0.04] text-text-muted border border-white/[0.06]',
   }
 
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <Link to="/" className="text-text-muted hover:text-gold transition-colors text-sm">{'\u2190'} Back</Link>
-          <h1 className="font-display text-3xl font-bold text-text-primary">{niche.name}</h1>
-          {niche.scan_status === 'running' && (
-            <span className="text-xs font-mono text-gold scanning">Scanning...</span>
-          )}
+      <div className="flex items-end justify-between mb-8">
+        <div>
+          <Link to="/" className="text-text-muted hover:text-gold transition-colors text-xs font-mono inline-flex items-center gap-1 mb-3">
+            {'\u2190'} Dashboard
+          </Link>
+          <h1 className="font-display text-3xl lg:text-4xl font-bold text-text-primary">{niche.name}</h1>
+          <div className="flex items-center gap-3 mt-2">
+            {niche.scan_status === 'running' && (
+              <span className="text-xs font-mono text-gold scanning px-2 py-0.5 rounded-md bg-gold/[0.06]">Scanning...</span>
+            )}
+            {niche.last_scanned && (
+              <span className="text-[11px] text-text-muted font-mono">Last scan: {new Date(niche.last_scanned).toLocaleString()}</span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-3">
-          {niche.last_scanned && (
-            <span className="text-xs text-text-muted">Last: {new Date(niche.last_scanned).toLocaleString()}</span>
-          )}
-          <button onClick={handleScan} className="px-4 py-2 rounded-lg bg-gold/10 text-gold text-sm hover:bg-gold/20 transition-all duration-300">
-            {niche.scan_status === 'running' ? 'Scanning...' : 'Run Scan'}
-          </button>
-        </div>
+        <button
+          onClick={handleScan}
+          className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-gold/15 to-gold/5 text-gold text-sm font-medium border border-gold/15 hover:border-gold/30 transition-all duration-300 hover:shadow-[0_4px_24px_rgba(212,168,67,0.15)] active:scale-[0.97]"
+        >
+          {niche.scan_status === 'running' ? 'Scanning...' : 'Run Scan'}
+        </button>
       </div>
 
-      {scanError && (
-        <div className="mb-4 glass-card p-4 border border-rose/30 text-rose text-sm">Scan error: {scanError}</div>
-      )}
+      {scanError && <div className="error-banner mb-6">Scan error: {scanError}</div>}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-border-subtle overflow-x-auto">
+      <div className="flex gap-1 mb-8 overflow-x-auto relative">
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-white/[0.06]" />
         {TABS.map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2.5 text-sm font-body whitespace-nowrap transition-all duration-300 border-b-2 -mb-px ${
+            className={`relative px-4 py-2.5 text-sm font-body whitespace-nowrap transition-all duration-300 ${
               activeTab === tab
-                ? 'border-gold text-gold'
-                : 'border-transparent text-text-muted hover:text-text-primary'
+                ? 'text-gold'
+                : 'text-text-muted hover:text-text-primary'
             }`}
           >
             {tab}
+            {activeTab === tab && (
+              <motion.div
+                layoutId="tab-indicator"
+                className="absolute bottom-0 left-2 right-2 h-0.5 bg-gold rounded-full"
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+              />
+            )}
           </button>
         ))}
       </div>
@@ -145,28 +156,28 @@ export default function NicheDetail() {
               {/* Summary Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                 {[
-                  { label: 'Keywords', value: niche.keywords.length },
-                  { label: 'Avg Volume', value: niche.keywords.length ? Math.round(niche.keywords.reduce((s, k) => s + k.volume, 0) / niche.keywords.length).toLocaleString() : '0' },
-                  { label: '% Growing', value: `${niche.keywords.length ? Math.round(niche.keywords.filter(k => k.trend_direction === 'growing' || k.trend_direction === 'exploding').length / niche.keywords.length * 100) : 0}%` },
-                  { label: 'w/ Autocomplete', value: `${niche.keywords.filter(k => k.autocomplete_present).length}` },
+                  { label: 'Keywords', value: niche.keywords.length, accent: 'text-text-primary' },
+                  { label: 'Avg Volume', value: niche.keywords.length ? Math.round(niche.keywords.reduce((s, k) => s + k.volume, 0) / niche.keywords.length).toLocaleString() : '0', accent: 'text-violet' },
+                  { label: '% Growing', value: `${niche.keywords.length ? Math.round(niche.keywords.filter(k => k.trend_direction === 'growing' || k.trend_direction === 'exploding').length / niche.keywords.length * 100) : 0}%`, accent: 'text-emerald' },
+                  { label: 'w/ Autocomplete', value: `${niche.keywords.filter(k => k.autocomplete_present).length}`, accent: 'text-gold' },
                 ].map(stat => (
                   <div key={stat.label} className="glass-card p-4">
-                    <p className="text-xs text-text-muted">{stat.label}</p>
-                    <p className="font-mono text-xl text-text-primary mt-1">{stat.value}</p>
+                    <p className="text-[10px] font-mono text-text-muted uppercase tracking-wider">{stat.label}</p>
+                    <p className={`font-mono text-2xl font-medium mt-1.5 ${stat.accent}`}>{stat.value}</p>
                   </div>
                 ))}
               </div>
 
               {/* Filters */}
-              <div className="flex gap-3 mb-4">
-                <select value={intentFilter} onChange={e => setIntentFilter(e.target.value)} className="bg-surface text-text-primary text-xs rounded-lg px-3 py-2 border border-border-subtle">
+              <div className="flex gap-3 mb-5">
+                <select value={intentFilter} onChange={e => setIntentFilter(e.target.value)} className="bg-white/[0.04] text-text-primary text-xs rounded-xl px-3 py-2.5 border border-white/[0.08] focus:border-gold/30 focus:outline-none transition-colors">
                   <option value="all">All Intents</option>
                   <option value="informational">Informational</option>
                   <option value="commercial">Commercial</option>
                   <option value="transactional">Transactional</option>
                   <option value="navigational">Navigational</option>
                 </select>
-                <select value={trendFilter} onChange={e => setTrendFilter(e.target.value)} className="bg-surface text-text-primary text-xs rounded-lg px-3 py-2 border border-border-subtle">
+                <select value={trendFilter} onChange={e => setTrendFilter(e.target.value)} className="bg-white/[0.04] text-text-primary text-xs rounded-xl px-3 py-2.5 border border-white/[0.08] focus:border-gold/30 focus:outline-none transition-colors">
                   <option value="all">All Trends</option>
                   <option value="exploding">Exploding</option>
                   <option value="growing">Growing</option>

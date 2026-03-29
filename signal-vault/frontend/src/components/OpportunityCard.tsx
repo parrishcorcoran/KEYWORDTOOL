@@ -29,32 +29,32 @@ export default function OpportunityCard({ opp, showNiche }: OpportunityCardProps
   return (
     <motion.div
       layout
-      className="glass-card p-5 cursor-pointer"
+      className="glass-card-interactive p-5 lg:p-6"
       onClick={() => setExpanded(!expanded)}
-      whileHover={{ scale: 1.005 }}
     >
-      <div className="flex items-start gap-4">
+      <div className="flex items-start gap-4 lg:gap-5">
         <ScoreBadge score={opp.overall_score} size="lg" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-display text-lg font-semibold text-text-primary">{opp.keyword}</h3>
             {showNiche && (
-              <span className="text-xs font-mono px-2 py-0.5 rounded bg-violet/10 text-violet">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-violet/[0.08] text-violet/80 border border-violet/[0.1]">
                 {NICHE_NAMES[opp.niche_id] || opp.niche_id}
               </span>
             )}
             <ConfidenceBadge confidence={opp.confidence} />
           </div>
-          <div className="flex gap-4 mt-2 text-xs font-mono text-text-muted">
+
+          <div className="flex gap-4 mt-2.5 text-xs font-mono text-text-muted">
             <span>{opp.volume.toLocaleString()} vol/mo</span>
             <span className={opp.growth > 0 ? 'text-emerald' : opp.growth < 0 ? 'text-rose' : ''}>
-              {opp.growth > 0 ? '+' : ''}{opp.growth.toFixed(0)}% growth
+              {opp.growth > 0 ? '+' : ''}{opp.growth.toFixed(0)}%
             </span>
-            <span>${opp.avg_price.toFixed(0)} avg price</span>
-            <span>{opp.product_count} products</span>
+            <span>${opp.avg_price.toFixed(0)} avg</span>
+            <span className="hidden sm:inline">{opp.product_count} products</span>
           </div>
 
-          <div className="mt-3 space-y-1.5">
+          <div className="mt-4 space-y-1.5">
             <MiniScoreBar label="Demand" value={opp.demand_score} />
             <MiniScoreBar label="WTP" value={opp.wtp_score} />
             <MiniScoreBar label="Gap" value={opp.gap_score} />
@@ -62,6 +62,10 @@ export default function OpportunityCard({ opp, showNiche }: OpportunityCardProps
             <MiniScoreBar label="Timing" value={opp.timing_score} />
           </div>
         </div>
+
+        <span className="text-text-muted/40 text-xs mt-1 transition-transform duration-300" style={{ transform: expanded ? 'rotate(180deg)' : '' }}>
+          {'\u25BC'}
+        </span>
       </div>
 
       <AnimatePresence>
@@ -70,35 +74,38 @@ export default function OpportunityCard({ opp, showNiche }: OpportunityCardProps
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             className="overflow-hidden"
           >
-            <div className="mt-4 pt-4 border-t border-border-subtle space-y-3 text-sm">
+            <div className="mt-5 pt-5 border-t border-white/[0.06] space-y-4 text-sm">
               {brief.what_to_build && (
-                <div><span className="text-gold font-semibold">What to Build:</span> <span className="text-text-primary">{brief.what_to_build}</span></div>
+                <div><span className="text-gold font-semibold text-xs uppercase tracking-wider">Build</span><p className="text-text-primary mt-1">{brief.what_to_build}</p></div>
               )}
               {brief.why_it_works && (
-                <div><span className="text-gold font-semibold">Why It Works:</span> <span className="text-text-primary">{brief.why_it_works}</span></div>
+                <div><span className="text-gold font-semibold text-xs uppercase tracking-wider">Why</span><p className="text-text-primary mt-1">{brief.why_it_works}</p></div>
               )}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {brief.price && (
-                  <div><span className="text-text-muted text-xs">Price</span><p className="font-mono text-emerald">{brief.price}</p></div>
+                  <div className="glass-card p-3 rounded-xl"><span className="text-text-muted text-[10px] uppercase tracking-wider">Price</span><p className="font-mono text-emerald mt-1">{brief.price}</p></div>
                 )}
                 {brief.format && (
-                  <div><span className="text-text-muted text-xs">Format</span><p className="text-text-primary">{brief.format}</p></div>
+                  <div className="glass-card p-3 rounded-xl"><span className="text-text-muted text-[10px] uppercase tracking-wider">Format</span><p className="text-text-primary mt-1 text-sm">{brief.format}</p></div>
                 )}
                 {brief.build_time && (
-                  <div><span className="text-text-muted text-xs">Build Time</span><p className="text-text-primary">{brief.build_time}</p></div>
+                  <div className="glass-card p-3 rounded-xl"><span className="text-text-muted text-[10px] uppercase tracking-wider">Build</span><p className="text-text-primary mt-1 text-sm">{brief.build_time}</p></div>
                 )}
                 {brief.launch_channel && (
-                  <div><span className="text-text-muted text-xs">Channel</span><p className="text-text-primary">{brief.launch_channel}</p></div>
+                  <div className="glass-card p-3 rounded-xl"><span className="text-text-muted text-[10px] uppercase tracking-wider">Channel</span><p className="text-text-primary mt-1 text-sm">{brief.launch_channel}</p></div>
                 )}
               </div>
               {brief.risk && (
-                <div><span className="text-rose font-semibold">Risk:</span> <span className="text-text-muted">{brief.risk}</span></div>
+                <div className="flex items-start gap-2 px-3 py-2 rounded-lg bg-rose/[0.04] border border-rose/[0.1]">
+                  <span className="text-rose text-xs font-semibold uppercase tracking-wider shrink-0 mt-0.5">Risk</span>
+                  <span className="text-text-muted text-sm">{brief.risk}</span>
+                </div>
               )}
               {brief.summary && (
-                <p className="text-text-primary italic border-l-2 border-gold/30 pl-3">{brief.summary}</p>
+                <p className="text-text-secondary italic border-l-2 border-gold/20 pl-4 text-sm leading-relaxed">{brief.summary}</p>
               )}
             </div>
           </motion.div>

@@ -4,20 +4,20 @@ interface TrendArrowProps {
 }
 
 export default function TrendArrow({ direction, growth }: TrendArrowProps) {
-  const config: Record<string, { arrow: string; color: string }> = {
-    exploding: { arrow: '\u2191\u2191', color: 'text-emerald' },
-    growing: { arrow: '\u2191', color: 'text-emerald' },
-    stable: { arrow: '\u2192', color: 'text-amber' },
-    declining: { arrow: '\u2193', color: 'text-rose' },
+  const config: Record<string, { arrow: string; color: string; bg: string }> = {
+    exploding: { arrow: '\u2191\u2191', color: 'text-emerald', bg: 'bg-emerald/[0.08]' },
+    growing: { arrow: '\u2191', color: 'text-emerald', bg: 'bg-emerald/[0.08]' },
+    stable: { arrow: '\u2192', color: 'text-text-muted', bg: 'bg-white/[0.04]' },
+    declining: { arrow: '\u2193', color: 'text-rose', bg: 'bg-rose/[0.06]' },
   }
 
-  const { arrow, color } = config[direction] || config.stable
+  const { arrow, color, bg } = config[direction] || config.stable
 
   return (
-    <span className={`${color} font-mono text-sm inline-flex items-center gap-1`}>
+    <span className={`${color} ${bg} font-mono text-xs inline-flex items-center gap-1 px-2 py-1 rounded-lg`}>
       {arrow}
       {growth !== undefined && (
-        <span className="text-xs">{growth > 0 ? '+' : ''}{growth.toFixed(0)}%</span>
+        <span className="text-[10px]">{growth > 0 ? '+' : ''}{growth.toFixed(0)}%</span>
       )}
     </span>
   )

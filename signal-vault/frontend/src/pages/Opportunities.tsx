@@ -14,6 +14,15 @@ const NICHE_OPTIONS = [
   { value: 'spiritual-wellness', label: 'Spiritual Wellness' },
 ]
 
+const container = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.04 } },
+}
+const item = {
+  hidden: { opacity: 0, y: 12 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.16, 1, 0.3, 1] } },
+}
+
 export default function Opportunities() {
   const { data: opportunities, loading, error } = useApiGet<OpportunityData[]>('/opportunities')
   const [nicheFilter, setNicheFilter] = useState('all')
@@ -28,40 +37,38 @@ export default function Opportunities() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-end justify-between mb-8">
         <div>
-          <h1 className="font-display text-3xl font-bold text-text-primary">All Opportunities</h1>
-          <p className="text-text-muted text-sm mt-1">Cross-niche opportunity rankings</p>
+          <h1 className="font-display text-3xl lg:text-4xl font-bold text-text-primary">All Opportunities</h1>
+          <p className="text-text-muted text-sm mt-2 font-body">Cross-niche opportunity rankings</p>
         </div>
         <span className="font-mono text-sm text-text-muted">{filtered.length} results</span>
       </div>
 
-      {error && (
-        <div className="mb-4 glass-card p-4 border border-rose/30 text-rose text-sm">Failed to load opportunities: {error}</div>
-      )}
+      {error && <div className="error-banner mb-6">Failed to load opportunities: {error}</div>}
 
       {/* Filters */}
-      <div className="flex gap-3 mb-6">
+      <div className="flex flex-wrap gap-3 mb-8">
         <select
           value={nicheFilter}
           onChange={e => setNicheFilter(e.target.value)}
-          className="bg-surface text-text-primary text-sm rounded-lg px-3 py-2 border border-border-subtle"
+          className="bg-white/[0.04] text-text-primary text-sm rounded-xl px-4 py-2.5 border border-white/[0.08] focus:border-gold/30 focus:outline-none transition-colors"
         >
           {NICHE_OPTIONS.map(opt => (
             <option key={opt.value} value={opt.value}>{opt.label}</option>
           ))}
         </select>
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-text-muted">Min Score:</label>
+        <div className="flex items-center gap-3 bg-white/[0.04] rounded-xl px-4 py-2 border border-white/[0.08]">
+          <label className="text-xs text-text-muted font-mono">Min Score</label>
           <input
             type="range"
             min={0}
             max={100}
             value={minScore}
             onChange={e => setMinScore(Number(e.target.value))}
-            className="w-24 accent-gold"
+            className="w-28 accent-gold"
           />
-          <span className="font-mono text-xs text-gold w-6">{minScore}</span>
+          <span className="font-mono text-sm text-gold w-8 text-right">{minScore}</span>
         </div>
       </div>
 
@@ -71,21 +78,24 @@ export default function Opportunities() {
           {Array.from({ length: 5 }).map((_, i) => <SkeletonCard key={i} />)}
         </div>
       ) : filtered.length > 0 ? (
-        <div className="space-y-3">
-          {filtered.map((opp, i) => (
-            <motion.div
-              key={opp.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-            >
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="space-y-3"
+        >
+          {filtered.map((opp) => (
+            <motion.div key={opp.id} variants={item}>
               <OpportunityCard opp={opp} showNiche />
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       ) : (
-        <div className="glass-card p-8 text-center">
-          <p className="text-text-muted">No opportunities found. Adjust filters or run scans first.</p>
+        <div className="glass-card p-10 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-gold/[0.08] border border-gold/[0.1] mx-auto mb-4 flex items-center justify-center">
+            <span className="text-gold text-xl">{'\u2726'}</span>
+          </div>
+          <p className="text-text-muted font-body text-sm">No opportunities found. Adjust filters or run scans first.</p>
         </div>
       )}
     </div>

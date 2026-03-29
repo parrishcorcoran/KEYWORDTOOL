@@ -9,6 +9,7 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", "")
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 PORT = int(os.getenv("PORT", "8000"))
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./signal_vault.db")
+APP_PASSWORD = os.getenv("APP_PASSWORD", "signalvault2026")
 
 NICHES = {
     "human-design": {

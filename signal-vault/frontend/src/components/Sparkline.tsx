@@ -18,8 +18,18 @@ export default function Sparkline({ data, width = 80, height = 24, color = '#7c6
     return `${x},${y}`
   }).join(' ')
 
+  // Gradient fill
+  const fillPoints = `0,${height} ${points} ${width},${height}`
+
   return (
     <svg width={width} height={height} className="inline-block">
+      <defs>
+        <linearGradient id={`spark-${data.length}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.15" />
+          <stop offset="100%" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <polygon points={fillPoints} fill={`url(#spark-${data.length})`} />
       <polyline
         points={points}
         fill="none"

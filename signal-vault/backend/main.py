@@ -1,17 +1,38 @@
 """Signal Vault — FastAPI backend for personal market intelligence dashboard."""
 
 import asyncio
+import hashlib
+import secrets
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy.orm import Session
 
-from config import FRONTEND_URL, NICHES, PORT
+from config import APP_PASSWORD, FRONTEND_URL, NICHES, PORT
 from database import get_db, init_db
 from models import Keyword, Opportunity, PainPoint, Product, RedditPost, ScanLog, SerpResult
 from scanner import active_scans, run_full_scan
+
+# Simple token-based auth — tokens issued on login, checked on every request
+_active_tokens: set[str] = set()
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    OPEN_PATHS = {"/health", "/auth/login"}
+
+    async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS":
+            return await call_next(request)
+        if request.url.path in self.OPEN_PATHS:
+            return await call_next(request)
+        token = request.headers.get("Authorization", "").removeprefix("Bearer ")
+        if token not in _active_tokens:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
+        return await call_next(request)
 
 
 @asynccontextmanager
@@ -22,6 +43,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Signal Vault", version="1.0.0", lifespan=lifespan)
 
+app.add_middleware(AuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[FRONTEND_URL, "http://localhost:5173", "http://localhost:3000"],
@@ -29,6 +51,25 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ── Auth ───────────────────────────────────────────────────────────────────
+
+@app.post("/auth/login")
+def login(body: dict):
+    password = body.get("password", "")
+    if not secrets.compare_digest(password, APP_PASSWORD):
+        raise HTTPException(status_code=401, detail="Invalid password")
+    token = secrets.token_urlsafe(32)
+    _active_tokens.add(token)
+    return {"token": token}
+
+
+@app.post("/auth/logout")
+def logout(request: Request):
+    token = request.headers.get("Authorization", "").removeprefix("Bearer ")
+    _active_tokens.discard(token)
+    return {"status": "ok"}
 
 
 # ── Health ──────────────────────────────────────────────────────────────────
